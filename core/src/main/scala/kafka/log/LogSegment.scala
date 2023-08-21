@@ -141,18 +141,18 @@ class LogSegment private[log] (val log: FileRecords,
    * @throws LogSegmentOffsetOverflowException if the largest offset causes index offset overflow
    */
   @nonthreadsafe
-  def append(largestOffset: Long,
-             largestTimestamp: Long,
-             shallowOffsetOfMaxTimestamp: Long,
-             records: MemoryRecords): Unit = {
+  def append(largestOffset: Long,               // 最大位移
+             largestTimestamp: Long,            // 最大时间戳
+             shallowOffsetOfMaxTimestamp: Long, // 最大时间戳对应消息的位移
+             records: MemoryRecords): Unit = {  // 真正要写入的消息集合（Set、Batch）
     if (records.sizeInBytes > 0) {
       trace(s"Inserting ${records.sizeInBytes} bytes at end offset $largestOffset at position ${log.sizeInBytes} " +
             s"with largest timestamp $largestTimestamp at shallow offset $shallowOffsetOfMaxTimestamp")
-      val physicalPosition = log.sizeInBytes()
+      val physicalPosition = log.sizeInBytes() // 已写入的物理位置
       if (physicalPosition == 0)
         rollingBasedTimestamp = Some(largestTimestamp)
 
-      ensureOffsetInRange(largestOffset)
+      ensureOffsetInRange(largestOffset) // 确保位移合法, 原理是与当前 baseOffset 相减, 为负数或者超过4字节表示的数字也就是 Int.Value 则是非法的
 
       // append the messages
       val appendedBytes = log.append(records)
